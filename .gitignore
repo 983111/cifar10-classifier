@@ -1,0 +1,6 @@
+data/ 
+__pycache__/ 
+outputs/ 
+*.exe 
+*.pth 
+*.tar.gz 
