@@ -10,6 +10,8 @@ import argparse
 import json
 from pathlib import Path
 
+from config import apply_cli_overrides, load_config
+
 import torch
 import numpy as np
 from sklearn.metrics import classification_report, confusion_matrix
@@ -25,7 +27,7 @@ def run_inference(model, loader, device):
 
     for imgs, labels in loader:
         imgs = imgs.to(device)
-        preds = model(imgs).argmax(dim=1).cpu()
+        preds = model(imgs).argmax(dim=1).detach().cpu()
         all_preds.append(preds)
         all_labels.append(labels)
 
@@ -34,17 +36,27 @@ def run_inference(model, loader, device):
 
 def parse_args():
     p = argparse.ArgumentParser(description="Evaluate CIFAR-10 classifier")
-    p.add_argument("--checkpoint", type=str,   default="./outputs/best_model.pth")
-    p.add_argument("--batch-size", type=int,   default=256)
-    p.add_argument("--data-dir",   type=str,   default="./data")
-    p.add_argument("--out-dir",    type=str,   default="./outputs")
-    p.add_argument("--workers",    type=int,   default=4)
+    p.add_argument("--config", type=str, default="./config.yaml")
+    p.add_argument("--checkpoint", type=str)
+    p.add_argument("--batch-size", type=int)
+    p.add_argument("--data-dir", type=str)
+    p.add_argument("--out-dir", type=str)
+    p.add_argument("--workers", type=int)
     return p.parse_args()
 
 
 def main():
     args = parse_args()
-    out_dir = Path(args.out_dir)
+    cfg = load_config(args.config)
+    apply_cli_overrides(cfg, {
+        "evaluate.checkpoint": args.checkpoint,
+        "evaluate.batch_size": args.batch_size,
+        "evaluate.data_dir": args.data_dir,
+        "evaluate.out_dir": args.out_dir,
+        "evaluate.workers": args.workers,
+    })
+    eval_cfg = cfg.evaluate
+    out_dir = Path(eval_cfg.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     device = (
@@ -55,12 +67,12 @@ def main():
 
     # ── Load model ────────────────────────────
     model = CIFAR10Net().to(device)
-    state = torch.load(args.checkpoint, map_location=device)
+    state = torch.load(eval_cfg.checkpoint, map_location=device)
     model.load_state_dict(state)
-    print(f"Loaded checkpoint: {args.checkpoint}")
+    print(f"Loaded checkpoint: {eval_cfg.checkpoint}")
 
     # ── Test loader ───────────────────────────
-    _, _, test_loader = get_loaders(args.data_dir, args.batch_size, num_workers=args.workers)
+    _, _, test_loader = get_loaders(eval_cfg.data_dir, eval_cfg.batch_size, num_workers=eval_cfg.workers)
 
     # ── Inference ─────────────────────────────
     preds, labels = run_inference(model, test_loader, device)

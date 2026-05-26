@@ -60,6 +60,8 @@ cifar10-classifier/
 │   ├── evaluate.py    # Test-set evaluation + confusion matrix
 │   └── visualize.py   # Training curves, confusion matrix, sample grid
 ├── outputs/           # Checkpoints + plots (git-ignored large files)
+├── config.yaml        # Centralized train/eval/visualize configuration
+├── tests/             # Unit tests
 ├── requirements.txt
 └── README.md
 ```
@@ -76,7 +78,7 @@ pip install -r requirements.txt
 
 ### 2. Train
 ```bash
-python src/train.py --epochs 30 --batch-size 128 --lr 0.01
+python src/train.py --config config.yaml --epochs 30 --batch-size 128 --lr 0.01
 ```
 
 CIFAR-10 (~170 MB) downloads automatically on first run.
@@ -126,3 +128,11 @@ Seed is fixed (42) for the train/val split. GPU recommended but not required —
 
 ## License
 MIT
+
+
+## Engineering Upgrades
+
+- Centralized configuration via `config.yaml` + OmegaConf loader.
+- Persistent logging in `outputs/train.log` using Python `logging`.
+- Optional Weights & Biases tracking (`--use-wandb`) for loss/accuracy/LR curves.
+- Basic `pytest` unit test validating model output shape.

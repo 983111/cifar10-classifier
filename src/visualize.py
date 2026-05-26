@@ -9,6 +9,8 @@ import argparse
 import json
 from pathlib import Path
 
+from config import apply_cli_overrides, load_config
+
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
@@ -207,15 +209,23 @@ def plot_sample_predictions(checkpoint: str, data_dir: str, out_path: Path):
 
 def parse_args():
     p = argparse.ArgumentParser(description="Generate visualisations")
-    p.add_argument("--out-dir",    type=str, default="./outputs")
-    p.add_argument("--data-dir",   type=str, default="./data")
-    p.add_argument("--checkpoint", type=str, default="./outputs/best_model.pth")
+    p.add_argument("--config", type=str, default="./config.yaml")
+    p.add_argument("--out-dir", type=str)
+    p.add_argument("--data-dir", type=str)
+    p.add_argument("--checkpoint", type=str)
     return p.parse_args()
 
 
 def main():
     args = parse_args()
-    out_dir = Path(args.out_dir)
+    cfg = load_config(args.config)
+    apply_cli_overrides(cfg, {
+        "visualize.out_dir": args.out_dir,
+        "visualize.data_dir": args.data_dir,
+        "visualize.checkpoint": args.checkpoint,
+    })
+    viz_cfg = cfg.visualize
+    out_dir = Path(viz_cfg.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     apply_style()
@@ -239,9 +249,9 @@ def main():
         print(f"  Skipping eval plots (no {results_path})")
 
     # Sample predictions
-    ckpt = Path(args.checkpoint)
+    ckpt = Path(viz_cfg.checkpoint)
     if ckpt.exists():
-        plot_sample_predictions(str(ckpt), args.data_dir, out_dir / "sample_predictions.png")
+        plot_sample_predictions(str(ckpt), viz_cfg.data_dir, out_dir / "sample_predictions.png")
     else:
         print(f"  Skipping sample predictions (no checkpoint at {ckpt})")
 
