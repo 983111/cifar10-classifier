@@ -1,0 +1,23 @@
+train:
+  epochs: 30
+  batch_size: 128
+  lr: 0.01
+  dropout: 0.4
+  data_dir: ./data
+  out_dir: ./outputs
+  workers: 4
+  patience: 10
+  use_wandb: false
+  wandb_project: cifar10-classifier
+
+evaluate:
+  checkpoint: ./outputs/best_model.pth
+  batch_size: 256
+  data_dir: ./data
+  out_dir: ./outputs
+  workers: 4
+
+visualize:
+  out_dir: ./outputs
+  data_dir: ./data
+  checkpoint: ./outputs/best_model.pth
